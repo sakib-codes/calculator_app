@@ -1,352 +1,154 @@
 import 'package:flutter/material.dart';
-import '../widgets/number_button.dart';
-import '../widgets/operator_button.dart';
-import '../widgets/icon_button.dart';
+import 'package:provider/provider.dart';
+import '../providers/calculator_provider.dart';
+import '../widgets/calculator_button.dart';
 
-class Calculator extends StatefulWidget {
+class Calculator extends StatelessWidget {
   const Calculator({super.key});
 
   @override
-  State<Calculator> createState() => _CalculatorState();
-}
-
-class _CalculatorState extends State<Calculator> {
-  String _input = '0';
-  String _operation = '0';
-  double num1 = 0;
-  double num2 = 0;
-  double result = 0;
-  bool _isResultDisplayed = false;
-
-  /// Converts a number to a string while removing unnecessary decimal places
-  String formatNumber(double number) {
-    if (number == number.toInt()) {
-      return number.toInt().toString();
-    }
-    return number.toString();
-  }
-
-  /// Handles all button presses
-  void buttonPress(String value) {
-    setState(() {
-      switch (value) {
-        // Reset everything to default
-        case 'AC':
-          _input = '0';
-          _operation = '0';
-          num1 = 0;
-          num2 = 0;
-          _isResultDisplayed = false;
-          break;
-
-        // Clear only the current input
-        case 'C':
-          _input = '0';
-          break;
-
-        // If an operator is pressed
-        case '+':
-        case '-':
-        case '×':
-        case '÷':
-          if (_operation != '0' && !_isResultDisplayed) {
-            // Perform the previous operation first
-            num2 = double.tryParse(_input) ?? 0;
-            switch (_operation) {
-              case '+':
-                num1 += num2;
-                break;
-              case '-':
-                num1 -= num2;
-                break;
-              case '×':
-                num1 *= num2;
-                break;
-              case '÷':
-                if (num2 != 0) {
-                  num1 /= num2;
-                } else {
-                  _input = 'Error';
-                  _operation = '0';
-                  _isResultDisplayed = true;
-                  return;
-                }
-                break;
-            }
-          } else if (!_isResultDisplayed) {
-            // Store first number if no operation is ongoing
-            num1 = double.tryParse(_input) ?? 0;
-          }
-
-          // Prepare for the next input
-          _input = '0';
-          _operation = value;
-          _isResultDisplayed = false;
-          break;
-
-        // Handle deletion of the last character
-        case 'del':
-          if (_input.isNotEmpty && _input != '0') {
-            _input = _input.substring(0, _input.length - 1);
-            if (_input.isEmpty || _input == '-') {
-              _input = '0';
-            }
-          }
-          break;
-
-        // Add a decimal point
-        case '.':
-          if (!_input.contains('.')) {
-            _input += '.';
-          }
-          break;
-
-        // Convert the input to a percentage
-        case '%':
-          double number = double.tryParse(_input) ?? 0;
-          _input = (number / 100).toString();
-          break;
-
-        // Calculate the final result
-        case '=':
-          if (_operation != '0') {
-            num2 = double.tryParse(_input) ?? 0;
-            switch (_operation) {
-              case '+':
-                result = num1 + num2;
-                break;
-              case '-':
-                result = num1 - num2;
-                break;
-              case '×':
-                result = num1 * num2;
-                break;
-              case '÷':
-                if (num2 != 0) {
-                  result = num1 / num2;
-                } else {
-                  _input = 'Error';
-                  _operation = '0';
-                  _isResultDisplayed = true;
-                  return;
-                }
-                break;
-            }
-
-            // Format and display result
-            String formattedResult = result
-                .toStringAsFixed(10)
-                .replaceAll(RegExp(r'([.]*0+)(?!.*\d)'), '');
-            String formattedNum1 = formatNumber(num1);
-            String formattedNum2 = formatNumber(num2);
-
-            _operation = '$formattedNum1$_operation$formattedNum2=';
-            _input = formattedResult;
-          }
-
-          // Prepare for new input if needed
-          num1 = result;
-          num2 = 0;
-          _isResultDisplayed = true;
-          break;
-
-        // If number is pressed
-        default:
-          if (_input.length >= 9 &&
-              !_isResultDisplayed &&
-              !_input.contains('.')) {
-            return;
-          }
-
-          if (_isResultDisplayed || _input == '0') {
-            _input = value;
-          } else {
-            _input += value;
-          }
-
-          _isResultDisplayed = false;
-
-          // If input follows a previous result, reset operation
-          if (_operation.contains('=')) {
-            _operation = '0';
-          }
-      }
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final provider = context.watch<CalculatorProvider>();
+
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Color(0xFF7fb4ec),
-        elevation: 1,
-        title: Text('Calculator', style: TextStyle(fontSize: 30)),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Color(0xFF7fb4ec), width: 4),
-                ),
-                color: Color(0xFFe1efff),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(50),
-                  bottomRight: Radius.circular(50),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Container(
+                alignment: Alignment.bottomRight,
+                padding: const EdgeInsets.only(left: 30, right: 30, bottom: 10),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.bottomRight,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        provider.operation != '0'
+                            ? provider.operation.contains('=')
+                                ? provider.operation
+                                : '${provider.formatNumber(provider.getNum1)} ${provider.operation}'
+                            : '',
+                        style: TextStyle(
+                          fontSize: 48,
+                          color: colorScheme.onSurface.withValues(alpha: 0.5),
+                          fontWeight: FontWeight.w400,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        provider.input,
+                        style: TextStyle(
+                          fontSize: 96,
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w300,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              alignment: Alignment.bottomRight,
-              padding: EdgeInsets.symmetric(vertical: 5, horizontal: 30),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.bottomRight,
+            ),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30.0),
+              child: Divider(
+                  thickness: 2,
+                  color: colorScheme.tertiary.withValues(alpha: 0.3)),
+            ),
+            Expanded(
+              flex: 6,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      _operation != '0'
-                          ? _operation.contains('=')
-                                ? _operation
-                                : '${formatNumber(num1)}$_operation'
-                          : '',
-                      style: TextStyle(fontSize: 40, color: Colors.grey),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      _input,
-                      style: TextStyle(fontSize: 70),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    buildRow(context, provider, ['AC', 'C', '%', '÷']),
+                    buildRow(context, provider, ['1', '2', '3', '×']),
+                    buildRow(context, provider, ['4', '5', '6', '-']),
+                    buildRow(context, provider, ['7', '8', '9', '+']),
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CalculatorButton(
+                            onTap: () => provider.buttonPress('.'),
+                            text: '.',
+                          ),
+                          CalculatorButton(
+                            onTap: () => provider.buttonPress('0'),
+                            text: '0',
+                          ),
+                          CalculatorButton(
+                            onTap: () => provider.buttonPress('del'),
+                            icon: Icons.backspace_outlined,
+                          ),
+                          CalculatorButton(
+                            onTap: () => provider.buttonPress('='),
+                            text: '=',
+                            fontSize: 40,
+                            isOperator: true,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
-          SizedBox(height: 10),
-          SizedBox(
-            height: 20,
-            width: 60,
-            child: Divider(thickness: 5, color: Color(0xFFe1efff)),
-          ),
-          buildButtonRows(),
-          SizedBox(height: 50),
-        ],
+            const SizedBox(height: 10),
+          ],
+        ),
       ),
     );
   }
 
-  /// Builds all calculator buttons grouped in rows
-  Widget buildButtonRows() {
-    return Column(
-      children: [
-        buildRow(
-          [
-            () => buttonPress('AC'),
-            () => buttonPress('C'),
-            () => buttonPress('%'),
-            () => buttonPress('÷'),
-          ],
-          ['AC', 'C', '%', '÷'],
-          [33, 35, 40, 52],
-        ),
-        buildRow(
-          [
-            () => buttonPress('1'),
-            () => buttonPress('2'),
-            () => buttonPress('3'),
-            () => buttonPress('×'),
-          ],
-          ['1', '2', '3', '×'],
-          [35, 35, 35, 52],
-        ),
-        buildRow(
-          [
-            () => buttonPress('4'),
-            () => buttonPress('5'),
-            () => buttonPress('6'),
-            () => buttonPress('-'),
-          ],
-          ['4', '5', '6', '-'],
-          [35, 35, 35, 50],
-        ),
-        buildRow(
-          [
-            () => buttonPress('7'),
-            () => buttonPress('8'),
-            () => buttonPress('9'),
-            () => buttonPress('+'),
-          ],
-          ['7', '8', '9', '+'],
-          [35, 35, 35, 50],
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            NumberButton(
-              onclick: () => buttonPress('.'),
-              Number: '.',
-              fontSize: 50,
-              color: Color(0xFFe1effc),
-            ),
-            NumberButton(
-              onclick: () => buttonPress('0'),
-              Number: '0',
-              fontSize: 35,
-              color: Color(0xFFe1effc),
-            ),
-            Icon_Button(
-              onclick: () => buttonPress('del'),
-              color: Color(0xFFe1effc),
-            ),
-            OperatorButton(
-              onclick: () => buttonPress('='),
-              Operator: '=',
-              fontSize: 52,
-              color: Color(0xFF7fb4ec),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  /// Utility to simplify row construction
   Widget buildRow(
-    List<VoidCallback> callbacks,
-    List<String> labels,
-    List<double> fontSizes,
-  ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(labels.length, (index) {
-        final isOperator = [
-          'AC',
-          'C',
-          '%',
-          '÷',
-          '×',
-          '-',
-          '+',
-        ].contains(labels[index]);
-        return isOperator
-            ? OperatorButton(
-                onclick: callbacks[index],
-                Operator: labels[index],
-                fontSize: fontSizes[index],
-                color: Color(0xFF7fb4ec),
-              )
-            : NumberButton(
-                onclick: callbacks[index],
-                Number: labels[index],
-                fontSize: fontSizes[index],
-                color: Color(0xFFe1effc),
-              );
-      }),
+      BuildContext context, CalculatorProvider provider, List<String> labels) {
+    return Expanded(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(labels.length, (index) {
+          final label = labels[index];
+          final isOperator = ['÷', '×', '-', '+'].contains(label);
+          final isSecondary = ['AC', 'C', '%'].contains(label);
+
+          double fontSize = 32;
+          if (isOperator) fontSize = 40;
+          if (label == 'AC' || label == 'C') fontSize = 28;
+
+          bool isActive = false;
+          if (isOperator &&
+              provider.operation == label &&
+              provider.input == '0') {
+            isActive = true;
+          }
+
+          Color? textColor;
+          if (isSecondary) {
+            textColor = Colors.orangeAccent;
+          }
+
+          return CalculatorButton(
+            onTap: () => provider.buttonPress(label),
+            text: label,
+            fontSize: fontSize,
+            isOperator: isOperator,
+            isSecondary: isSecondary,
+            isActive: isActive,
+            textColor: textColor,
+          );
+        }),
+      ),
     );
   }
 }
+
