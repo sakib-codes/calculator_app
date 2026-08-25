@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class CalculatorButton extends StatelessWidget {
   final String? text;
@@ -11,6 +12,8 @@ class CalculatorButton extends StatelessWidget {
   final bool isOperator;
   final bool isSecondary;
   final bool isActive;
+  final int flex;
+  final bool forceCircle;
 
   const CalculatorButton({
     super.key,
@@ -24,12 +27,15 @@ class CalculatorButton extends StatelessWidget {
     this.isOperator = false,
     this.isSecondary = false,
     this.isActive = false,
+    this.flex = 1,
+    this.forceCircle = true,
   }) : assert(text != null || icon != null, 'Text or Icon must be provided');
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     Color buttonColor;
     Color contentColor;
@@ -42,7 +48,7 @@ class CalculatorButton extends StatelessWidget {
       contentColor = Colors.white;
     } else if (isSecondary) {
       buttonColor = colorScheme.tertiary;
-      contentColor = theme.brightness == Brightness.dark
+      contentColor = isDark
           ? Colors.white70
           : colorScheme.onSurface;
     } else {
@@ -53,47 +59,55 @@ class CalculatorButton extends StatelessWidget {
     buttonColor = backgroundColor ?? buttonColor;
     contentColor = textColor ?? contentColor;
 
+    Widget buttonMaterial = Material(
+      color: buttonColor,
+      borderRadius: BorderRadius.circular(28),
+      elevation: isOperator ? 6 : (isDark ? 0 : 2),
+      shadowColor: isOperator
+          ? colorScheme.primary.withValues(alpha: 0.5)
+          : Colors.black.withValues(alpha: 0.08),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(28),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        splashColor: contentColor.withValues(alpha: 0.2),
+        highlightColor: contentColor.withValues(alpha: 0.1),
+        child: Center(
+          child: icon != null
+              ? Icon(
+                  icon,
+                  size: fontSize,
+                  color: contentColor,
+                )
+              : Transform.translate(
+                  offset: Offset(0, isOperator ? -1.0 : 0.0),
+                  child: Text(
+                    text!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: contentColor,
+                      fontSize: fontSize,
+                      fontWeight: fontWeight,
+                      height: 1.0,
+                    ),
+                  ),
+                ),
+        ),
+      ),
+    );
+
     return Expanded(
+      flex: flex,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: Material(
-            color: buttonColor,
-            borderRadius: BorderRadius.circular(24),
-            elevation: isOperator ? 4 : 2,
-            shadowColor: isOperator
-                ? colorScheme.primary.withValues(alpha: 0.4)
-                : Colors.black12,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(24),
-              onTap: onTap,
-              splashColor: contentColor.withValues(alpha: 0.2),
-              highlightColor: contentColor.withValues(alpha: 0.1),
-              child: Center(
-                child: icon != null
-                    ? Icon(
-                        icon,
-                        size: 32,
-                        color: contentColor,
-                      )
-                    : Transform.translate(
-                        offset: Offset(0, isOperator ? -4.0 : (text == '.' ? 2.0 : 0.0)),
-                        child: Text(
-                          text!,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: contentColor,
-                            fontSize: fontSize,
-                            fontWeight: fontWeight,
-                            height: 1.0, // Keeping 1.0 consistent
-                          ),
-                        ),
-                      ),
-              ),
-            ),
-          ),
-        ),
+        child: forceCircle
+            ? AspectRatio(
+                aspectRatio: flex.toDouble(),
+                child: buttonMaterial,
+              )
+            : buttonMaterial,
       ),
     );
   }
