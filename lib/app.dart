@@ -5,6 +5,7 @@ import 'package:calculator_app/screens/calculator.dart';
 import 'package:calculator_app/providers/calculator_provider.dart';
 import 'package:calculator_app/providers/theme_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -23,6 +24,15 @@ class App extends StatelessWidget {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'Calculator',
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('en', 'US'),
+              Locale('en', 'GB'),
+            ],
             themeMode: themeProvider.themeMode,
             theme: isSystem ? ThemeData(
               brightness: Brightness.light,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
+import 'theme_screen.dart';
+import 'developer_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -8,7 +10,6 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -19,76 +20,182 @@ class SettingsScreen extends StatelessWidget {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
         children: [
-          Text(
-            'Appearance',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.primary,
-            ),
+          _buildSectionHeader(context, 'Appearance'),
+          const SizedBox(height: 8),
+          _buildSettingsGroup(
+            context,
+            children: [
+              _buildSettingsTile(
+                context: context,
+                assetPath: 'assets/icons/theme.png',
+                title: 'Theme',
+                subtitle: _getThemeName(themeProvider.currentTheme),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ThemeScreen()),
+                  );
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          _buildThemeTile(
-            context: context,
-            title: 'System Default',
-            theme: AppTheme.system,
-            currentTheme: themeProvider.currentTheme,
-            onTap: () => themeProvider.setTheme(AppTheme.system),
-          ),
-          _buildThemeTile(
-            context: context,
-            title: 'Cyberpunk',
-            theme: AppTheme.cyberpunk,
-            currentTheme: themeProvider.currentTheme,
-            onTap: () => themeProvider.setTheme(AppTheme.cyberpunk),
-          ),
-          _buildThemeTile(
-            context: context,
-            title: 'Retro Terminal',
-            theme: AppTheme.retro,
-            currentTheme: themeProvider.currentTheme,
-            onTap: () => themeProvider.setTheme(AppTheme.retro),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'About',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('Ultimate Calculator'),
-            subtitle: const Text('Version 1.0.0'),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          const SizedBox(height: 32),
+          _buildSectionHeader(context, 'About'),
+          const SizedBox(height: 8),
+          _buildSettingsGroup(
+            context,
+            children: [
+              _buildSettingsTile(
+                context: context,
+                assetPath: 'assets/icons/info.png',
+                title: 'Ultimate Calculator',
+                subtitle: 'Version 1.0.0',
+              ),
+              _buildDivider(context),
+              _buildSettingsTile(
+                context: context,
+                assetPath: 'assets/icons/developer.png',
+                title: 'Developer',
+                subtitle: 'Sakib',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const DeveloperScreen()),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildThemeTile({
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 1.2,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsGroup(BuildContext context, {required List<Widget> children}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
+          width: 0.5,
+        ),
+      ),
+      child: Column(
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildDivider(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 64.0, right: 16.0),
+      child: Divider(
+        height: 1,
+        thickness: 0.5,
+        color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
+      ),
+    );
+  }
+
+  Widget _buildSettingsTile({
     required BuildContext context,
+    required String assetPath,
     required String title,
-    required AppTheme theme,
-    required AppTheme currentTheme,
-    required VoidCallback onTap,
+    String? subtitle,
+    VoidCallback? onTap,
   }) {
-    final isSelected = theme == currentTheme;
     final colorScheme = Theme.of(context).colorScheme;
     
-    return ListTile(
-      title: Text(title),
-      trailing: isSelected
-          ? Icon(Icons.check_circle, color: colorScheme.primary)
-          : const Icon(Icons.circle_outlined, color: Colors.grey),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      onTap: onTap,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Image.asset(
+                  assetPath,
+                  width: 22,
+                  height: 22,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (onTap != null)
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
+  }
+
+  String _getThemeName(AppTheme theme) {
+    switch (theme) {
+      case AppTheme.system:
+        return 'System Default';
+      case AppTheme.cyberpunk:
+        return 'Cyberpunk';
+      case AppTheme.retro:
+        return 'Retro Terminal';
+      case AppTheme.nothing:
+        return 'Nothing (Dark)';
+      case AppTheme.nothingLight:
+        return 'Nothing (Light)';
+      case AppTheme.custom:
+        return 'Custom Theme';
+    }
   }
 }

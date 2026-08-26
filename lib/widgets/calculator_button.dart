@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 
 class CalculatorButton extends StatelessWidget {
   final String? text;
@@ -36,12 +38,15 @@ class CalculatorButton extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    
+    final currentAppTheme = Provider.of<ThemeProvider>(context).currentTheme;
+    final isNothing = currentAppTheme == AppTheme.nothing || currentAppTheme == AppTheme.nothingLight;
 
     Color buttonColor;
     Color contentColor;
 
     if (isActive) {
-      buttonColor = Colors.white;
+      buttonColor = colorScheme.onPrimary;
       contentColor = colorScheme.primary;
     } else if (isOperator) {
       buttonColor = colorScheme.primary;
@@ -76,24 +81,42 @@ class CalculatorButton extends StatelessWidget {
         highlightColor: contentColor.withValues(alpha: 0.1),
         child: Center(
           child: icon != null
-              ? Icon(
-                  icon,
-                  size: fontSize,
-                  color: contentColor,
-                )
-              : Transform.translate(
-                  offset: Offset(0, isOperator ? -1.0 : 0.0),
-                  child: Text(
-                    text!,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
+              ? (isNothing && icon == Icons.backspace_outlined
+                  ? Text(
+                      'DEL',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: contentColor,
+                        fontSize: fontSize * 0.8,
+                        fontWeight: fontWeight,
+                        height: 1.0,
+                      ),
+                    )
+                  : Icon(
+                      icon,
+                      size: fontSize,
                       color: contentColor,
-                      fontSize: fontSize,
-                      fontWeight: fontWeight,
-                      height: 1.0,
+                    ))
+              : (isNothing && (text == '×' || text == '÷'))
+                  ? Transform.translate(
+                      offset: Offset(0, text == '×' ? 2.0 : 0.0),
+                      child: text == '×' 
+                          ? _buildDotMatrixMultiply(contentColor, fontSize)
+                          : _buildDotMatrixDivide(contentColor, fontSize),
+                    )
+                  : Transform.translate(
+                      offset: Offset(0, isOperator ? -1.0 : 0.0),
+                      child: Text(
+                        text!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: contentColor,
+                          fontSize: fontSize,
+                          fontWeight: fontWeight,
+                          height: 1.0,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
         ),
       ),
     );
@@ -109,6 +132,62 @@ class CalculatorButton extends StatelessWidget {
               )
             : buttonMaterial,
       ),
+    );
+  }
+
+  Widget _buildDotMatrixDivide(Color color, double size) {
+    final dotSize = size * 0.085;
+    return SizedBox(
+      width: size * 0.6,
+      height: size * 0.6,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(width: dotSize, height: dotSize, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          SizedBox(height: dotSize * 1.8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) => Padding(
+              padding: EdgeInsets.symmetric(horizontal: dotSize * 0.2),
+              child: Container(width: dotSize, height: dotSize, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            )),
+          ),
+          SizedBox(height: dotSize * 1.8),
+          Container(width: dotSize, height: dotSize, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDotMatrixMultiply(Color color, double size) {
+    final dotSize = size * 0.085;
+    return SizedBox(
+      width: size * 0.6,
+      height: size * 0.6,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildMultiplyRow(color, dotSize, [true, false, false, false, true]),
+          _buildMultiplyRow(color, dotSize, [false, true, false, true, false]),
+          _buildMultiplyRow(color, dotSize, [false, false, true, false, false]),
+          _buildMultiplyRow(color, dotSize, [false, true, false, true, false]),
+          _buildMultiplyRow(color, dotSize, [true, false, false, false, true]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMultiplyRow(Color color, double dotSize, List<bool> dots) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: dots.map((isOn) => Padding(
+        padding: EdgeInsets.all(dotSize * 0.15),
+        child: Container(
+          width: dotSize, 
+          height: dotSize, 
+          decoration: BoxDecoration(color: isOn ? color : Colors.transparent, shape: BoxShape.circle)
+        ),
+      )).toList(),
     );
   }
 }

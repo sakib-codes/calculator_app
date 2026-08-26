@@ -41,10 +41,11 @@ class AppDrawer extends StatelessWidget {
                             color: colorScheme.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: Icon(
-                            Icons.calculate_rounded,
-                            size: 32,
-                            color: colorScheme.primary,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Image.asset(
+                              'assets/icons/calculator icon.png',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -75,7 +76,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _buildDrawerItem(
                     context: context,
-                    icon: Icons.calculate_outlined,
+                    assetPath: 'assets/icons/calculator icon.png',
                     title: 'Standard',
                     isSelected: provider.mode == CalculatorMode.standard,
                     onTap: () {
@@ -87,7 +88,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _buildDrawerItem(
                     context: context,
-                    icon: Icons.code,
+                    assetPath: 'assets/icons/terminal.png',
                     title: 'Programmer',
                     isSelected: provider.mode == CalculatorMode.programmer,
                     onTap: () {
@@ -99,12 +100,24 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _buildDrawerItem(
                     context: context,
-                    icon: Icons.science_outlined,
+                    assetPath: 'assets/icons/seientific.png',
                     title: 'Scientific',
                     isSelected: provider.mode == CalculatorMode.scientific,
                     onTap: () {
                       if (provider.mode != CalculatorMode.scientific) {
                         provider.setMode(CalculatorMode.scientific);
+                      }
+                      Navigator.pop(context); // Close drawer
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context: context,
+                    assetPath: 'assets/icons/time & age.png',
+                    title: 'Age & Time',
+                    isSelected: provider.mode == CalculatorMode.age,
+                    onTap: () {
+                      if (provider.mode != CalculatorMode.age) {
+                        provider.setMode(CalculatorMode.age);
                       }
                       Navigator.pop(context); // Close drawer
                     },
@@ -126,7 +139,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _buildDrawerItem(
                     context: context,
-                    icon: Icons.swap_horiz,
+                    assetPath: 'assets/icons/converter.png',
                     title: 'Quick Converter',
                     isSelected: false,
                     onTap: () {
@@ -137,7 +150,7 @@ class AppDrawer extends StatelessWidget {
                   const Spacer(),
                   _buildDrawerItem(
                     context: context,
-                    icon: Icons.settings_outlined,
+                    assetPath: 'assets/icons/settings.png',
                     title: 'Settings',
                     isSelected: false,
                     onTap: () {
@@ -160,7 +173,7 @@ class AppDrawer extends StatelessWidget {
 
   Widget _buildDrawerItem({
     required BuildContext context,
-    required IconData icon,
+    required String assetPath,
     required String title,
     required bool isSelected,
     required VoidCallback onTap,
@@ -169,9 +182,10 @@ class AppDrawer extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 2.0),
       child: ListTile(
-        leading: Icon(
-          icon,
-          color: isSelected ? colorScheme.primary : colorScheme.onSurface.withValues(alpha: 0.7),
+        leading: Image.asset(
+          assetPath,
+          width: 24,
+          height: 24,
         ),
         title: Text(
           title,

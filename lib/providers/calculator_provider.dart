@@ -4,7 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:math_expressions/math_expressions.dart';
 import 'dart:math' as math;
 
-enum CalculatorMode { standard, programmer, scientific }
+enum CalculatorMode { standard, programmer, scientific, age }
 enum BaseMode { hex, dec, oct, bin }
 
 class CalculatorProvider extends ChangeNotifier {
@@ -70,7 +70,29 @@ class CalculatorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+
+  Decimal _parseInput(String input) {
+    if (_mode == CalculatorMode.programmer) {
+      int decValue = 0;
+      try {
+        if (_baseMode == BaseMode.hex) { decValue = int.parse(input, radix: 16); }
+        else if (_baseMode == BaseMode.oct) { decValue = int.parse(input, radix: 8); }
+        else if (_baseMode == BaseMode.bin) { decValue = int.parse(input, radix: 2); }
+        else { decValue = int.parse(input); }
+      } catch (_) { }
+      return Decimal.parse(decValue.toString());
+    }
+    return Decimal.tryParse(input) ?? Decimal.zero;
+  }
+
   String formatNumber(Decimal number) {
+    if (_mode == CalculatorMode.programmer) {
+      int val = number.toDouble().toInt();
+      if (_baseMode == BaseMode.hex) return val.toRadixString(16).toUpperCase();
+      if (_baseMode == BaseMode.oct) return val.toRadixString(8);
+      if (_baseMode == BaseMode.bin) return val.toRadixString(2);
+      return val.toString();
+    }
     return number.toString();
   }
 
@@ -81,7 +103,7 @@ class CalculatorProvider extends ChangeNotifier {
       return;
     }
 
-    if (value == 'AC' || value == 'C') {
+    if (value == 'AC' || (value == 'C' && _mode != CalculatorMode.programmer)) {
       _clear();
       if (value == 'AC') _clearAll();
     } else if (value == 'del') {
@@ -101,8 +123,13 @@ class CalculatorProvider extends ChangeNotifier {
   }
 
   void _handleScientificPress(String value) {
-    if (value == 'AC' || value == 'C') {
+    if (value == 'AC') {
       _clearAll();
+      return;
+    }
+    if (value == 'C') {
+      _input = '0';
+      _isResultDisplayed = false;
       return;
     }
     
@@ -156,8 +183,8 @@ class CalculatorProvider extends ChangeNotifier {
       case 'e': _input += 'e'; break;
       case '(': _input += '('; break;
       case ')': _input += ')'; break;
-      case '×': _input += '*'; break;
-      case '÷': _input += '/'; break;
+      case '×': _input += '×'; break;
+      case '÷': _input += '÷'; break;
       case 'inv': toggleInvMode(); return; // state toggle
       default: _input += value;
     }
@@ -167,7 +194,7 @@ class CalculatorProvider extends ChangeNotifier {
     if (_input.isEmpty || _input == 'Error') return;
 
     try {
-      String expressionToParse = _input;
+      String expressionToParse = _input.replaceAll('×', '*').replaceAll('÷', '/');
       
       // Auto-close open parentheses
       int openBraces = expressionToParse.split('(').length - 1;
@@ -176,18 +203,8 @@ class CalculatorProvider extends ChangeNotifier {
         expressionToParse += ')' * (openBraces - closeBraces);
       }
       
-      // Convert degrees to radians for trigonometric functions if needed
-      // Uses a regex to wrap the arguments of sin, cos, tan with (pi/180)*
-      // e.g. sin(45+30) becomes sin((pi/180)*(45+30))
       if (_isDegrees) {
-        expressionToParse = expressionToParse.replaceAllMapped(
-          RegExp(r'\b(sin|cos|tan)\(([^)]+)\)'),
-          (match) => '${match.group(1)}((pi/180)*(${match.group(2)}))'
-        );
-        expressionToParse = expressionToParse.replaceAllMapped(
-          RegExp(r'\b(arcsin|arccos|arctan)\(([^)]+)\)'),
-          (match) => '((180/pi)*${match.group(1)}(${match.group(2)}))'
-        );
+        expressionToParse = _applyDegreeConversion(expressionToParse);
       }
       
       Parser p = Parser();
@@ -237,7 +254,7 @@ class CalculatorProvider extends ChangeNotifier {
     }
 
     if (_operation != '0' && !_isResultDisplayed) {
-      num2 = Decimal.tryParse(_input) ?? Decimal.zero;
+      num2 = _parseInput(_input);
       switch (_operation) {
         case '+': num1 += num2; break;
         case '-': num1 -= num2; break;
@@ -251,7 +268,7 @@ class CalculatorProvider extends ChangeNotifier {
           break;
       }
     } else if (!_isResultDisplayed) {
-      num1 = Decimal.tryParse(_input) ?? Decimal.zero;
+      num1 = _parseInput(_input);
     }
 
     _input = '0';
@@ -289,7 +306,7 @@ class CalculatorProvider extends ChangeNotifier {
       return;
     }
 
-    Decimal number = Decimal.tryParse(_input) ?? Decimal.zero;
+    Decimal number = _parseInput(_input);
     _input = (number / Decimal.parse('100')).toDecimal(scaleOnInfinitePrecision: 10).toString();
     _isResultDisplayed = true;
   }
@@ -298,7 +315,7 @@ class CalculatorProvider extends ChangeNotifier {
     if (_operation.contains('=')) return;
 
     if (_operation != '0') {
-      num2 = Decimal.tryParse(_input) ?? Decimal.zero;
+      num2 = _parseInput(_input);
       switch (_operation) {
         case '+': result = num1 + num2; break;
         case '-': result = num1 - num2; break;
@@ -312,7 +329,7 @@ class CalculatorProvider extends ChangeNotifier {
           break;
       }
 
-      String formattedResult = result.toString();
+      String formattedResult = formatNumber(result);
       String formattedNum1 = formatNumber(num1);
       String formattedNum2 = formatNumber(num2);
 
@@ -322,7 +339,7 @@ class CalculatorProvider extends ChangeNotifier {
       _operation = '$formattedNum1$_operation$formattedNum2=';
       _input = formattedResult;
     } else {
-      result = Decimal.tryParse(_input) ?? Decimal.zero;
+      result = _parseInput(_input);
     }
 
     num1 = result;
@@ -336,7 +353,7 @@ class CalculatorProvider extends ChangeNotifier {
       _input = parts[1];
       _operation = '0';
       _isResultDisplayed = true;
-      num1 = Decimal.tryParse(_input) ?? Decimal.zero;
+      num1 = _parseInput(_input);
       num2 = Decimal.zero;
       notifyListeners();
     }
@@ -358,5 +375,75 @@ class CalculatorProvider extends ChangeNotifier {
 
     _isResultDisplayed = false;
     if (_operation.contains('=')) _operation = '0';
+  }
+
+  /// Finds the matching closing parenthesis for the opening '(' at [startIndex].
+  /// Returns the index of the matching ')' or -1 if not found.
+  int _findMatchingParen(String str, int startIndex) {
+    int depth = 0;
+    for (int i = startIndex; i < str.length; i++) {
+      if (str[i] == '(') depth++;
+      if (str[i] == ')') {
+        depth--;
+        if (depth == 0) return i;
+      }
+    }
+    return -1;
+  }
+
+  /// Wraps trig function arguments with degree-to-radian conversion.
+  /// Handles nested parentheses correctly.
+  String _applyDegreeConversion(String expr) {
+    // Process sin, cos, tan -> wrap argument with (pi/180)*
+    for (final func in ['sin', 'cos', 'tan']) {
+      String result = '';
+      int i = 0;
+      while (i < expr.length) {
+        // Check if we're at a trig function (not arcsin/arccos/arctan)
+        if (expr.startsWith(func, i) && 
+            (i == 0 || !RegExp(r'[a-zA-Z]').hasMatch(expr[i - 1])) &&
+            !expr.startsWith('arc$func', i > 2 ? i - 3 : 0)) {
+          int parenStart = i + func.length;
+          if (parenStart < expr.length && expr[parenStart] == '(') {
+            int parenEnd = _findMatchingParen(expr, parenStart);
+            if (parenEnd != -1) {
+              String arg = expr.substring(parenStart + 1, parenEnd);
+              result += '$func((pi/180)*($arg))';
+              i = parenEnd + 1;
+              continue;
+            }
+          }
+        }
+        result += expr[i];
+        i++;
+      }
+      expr = result;
+    }
+
+    // Process arcsin, arccos, arctan -> wrap result with (180/pi)*
+    for (final func in ['arcsin', 'arccos', 'arctan']) {
+      String result = '';
+      int i = 0;
+      while (i < expr.length) {
+        if (expr.startsWith(func, i) &&
+            (i == 0 || !RegExp(r'[a-zA-Z]').hasMatch(expr[i - 1]))) {
+          int parenStart = i + func.length;
+          if (parenStart < expr.length && expr[parenStart] == '(') {
+            int parenEnd = _findMatchingParen(expr, parenStart);
+            if (parenEnd != -1) {
+              String arg = expr.substring(parenStart + 1, parenEnd);
+              result += '((180/pi)*$func($arg))';
+              i = parenEnd + 1;
+              continue;
+            }
+          }
+        }
+        result += expr[i];
+        i++;
+      }
+      expr = result;
+    }
+
+    return expr;
   }
 }
