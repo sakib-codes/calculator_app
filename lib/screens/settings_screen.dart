@@ -50,7 +50,7 @@ class SettingsScreen extends StatelessWidget {
               _buildSettingsTile(
                 context: context,
                 assetPath: 'assets/icons/info.png',
-                title: 'Ultimate Calculator',
+                title: 'EzCalc',
                 subtitle: 'Version 1.0.0',
               ),
               _buildDivider(context),

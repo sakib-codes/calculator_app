@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/calculator_provider.dart';
 import '../screens/settings_screen.dart';
@@ -50,8 +51,8 @@ class AppDrawer extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Ultimate Calc',
-                          style: TextStyle(
+                          'EzCalc',
+                          style: GoogleFonts.pacifico(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,

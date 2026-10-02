@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:calculator_app/screens/calculator.dart';
+import 'package:calculator_app/screens/splash_screen.dart';
 import 'package:calculator_app/providers/calculator_provider.dart';
 import 'package:calculator_app/providers/theme_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -78,7 +78,7 @@ class App extends StatelessWidget {
                 ),
               ),
             ) : themeProvider.themeData,
-            home: const Calculator(),
+            home: const SplashScreen(),
           );
         },
       ),

@@ -115,7 +115,7 @@ class DeveloperScreen extends StatelessWidget {
               children: [
                 ListTile(
                   leading: Icon(Icons.star_rounded, color: colorScheme.primary),
-                  title: const Text('Ultimate Calculator'),
+                  title: const Text('EzCalc'),
                   subtitle: const Text('Version 1.0.0'),
                 ),
               ],
